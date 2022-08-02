@@ -1,6 +1,8 @@
 package twitchbot
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	currentName string
@@ -11,15 +13,27 @@ type User struct {
 	messages []string
 
 	visitCount int
-	viewingTime time.Duration
-	lastVisit time.Duration
+	viewingTime time.Time
+	lastVisit time.Time
 
 	isFollow bool
-	followDate time.Duration // TODO:: Func FollowTime
-	unfollowDate time.Duration
+	followDate time.Time
+	unfollowDate time.Time
 
 	isSub bool
 
 	isBot bool
 	isStreamer bool
+}
+
+func (user *User) AddNewUser() {
+	
+}
+
+func (user *User) FollowTime() time.Duration {
+	if user.isFollow {
+		return time.Since(user.followDate)
+	} else {
+		return 0
+	}
 }

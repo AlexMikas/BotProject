@@ -5,9 +5,9 @@
 package main
 
 import (
-	"./twitchbot"
 	"encoding/json"
 	"fmt"
+	"mybot/twitchbot"
 	"net/http"
 	"os"
 	"time"
@@ -40,7 +40,7 @@ func saveToJSON(filename *os.File, key interface{}) {
 func createConfig(filename string) {
 	// create file
 	file, err := os.Create(filename)
-	if err !=nil {
+	if err != nil {
 		fmt.Print(err)
 		return
 	}
@@ -51,7 +51,7 @@ func createConfig(filename string) {
 		MsgRate:     time.Duration(20/30) * time.Millisecond,
 		BotName:     "keks1kbot",
 		Port:        "6667",
-		PrivatePath: "./private/oauth.json",
+		PrivatePath: "./configs/oauth.json",
 		Server:      "irc.chat.twitch.tv", // irc.twitch.tv
 	}
 	saveToJSON(file, myBot)
@@ -59,7 +59,7 @@ func createConfig(filename string) {
 
 func main() {
 	// Проверка конфигурационных файлов
-	filename := "config.json"
+	filename := "./configs/config.json"
 
 	if _, err := os.Stat(filename); err == nil {
 		// path/to/config.json exists
