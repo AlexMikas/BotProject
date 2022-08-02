@@ -9,18 +9,19 @@ TODO:
 5. Выход.
 
 Хэширование пароля?
- */
+*/
 
 import (
 	// rgb "github.com/foresthoffman/rgblog"
-	rgb "../rgblog"
 	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	rgb "mybot/rgblog"
 	"net"
+	"net/http"
 	"net/textproto"
 	"regexp"
 	"strings"
@@ -62,7 +63,6 @@ var MsgRegex *regexp.Regexp = regexp.MustCompile(`^:(\w+)!\w+@\w+\.tmi\.twitch\.
 // @tag-name-1=<tag-value-1>;tag-name-2=<tag-value-2>;... <rest of the command syntax depends on the particular IRC command used>
 var inputRegex *regexp.Regexp = regexp.MustCompile(`^:(\w+)!\w+@\w+\.tmi\.twitch\.tv (PRIVMSG) #\w+(?: :(.*))?$`)
 
-
 // Regex for parsing user commands, from already parsed PRIVMSG strings.
 //
 // First matched group is the command name and the second matched group is the argument for the
@@ -75,7 +75,7 @@ type OAuthCred struct {
 	Password string `json:"password,omitempty"`
 
 	// The developer application client ID. Used for API calls to Twitch.
-	ClientID string `json:"client_id,omitempty"`
+	ClientID string `json:"ClientID,omitempty"`
 }
 
 type Bot interface {
@@ -111,6 +111,8 @@ type BasicBot struct {
 	// A reference to the bot's connection to the server.
 	conn net.Conn
 
+	headers http.Header
+	client  *http.Client
 	// The credentials necessary for authentication.
 	Credentials *OAuthCred
 
@@ -197,6 +199,8 @@ func (bb *BasicBot) HandleChat() error {
 				userName := matches[1]
 				msgType := matches[2]
 
+				bb.GetUserByName(userName)
+
 				switch msgType {
 				case "PRIVMSG":
 					msg := matches[3]
@@ -263,8 +267,20 @@ func (bb *BasicBot) ReadCredentials() error {
 	return nil
 }
 
+func (bb *BasicBot) CreateHeaders(v5 bool) http.Header {
+	bb.headers = make(http.Header)
+	bb.headers.Set("Client-ID", bb.Credentials.ClientID)
+	bb.headers.Set("Content-Type", "application/json")
+
+	if v5 {
+		bb.headers.Set("Accept", "application/vnd.twitchtv.v5+json")
+	}
+
+	return bb.headers
+}
+
 // Makes the bot send a message to the chat channel.
-func (bb *BasicBot)  Say(msg string) error {
+func (bb *BasicBot) Say(msg string) error {
 	if "" == msg {
 		return errors.New("BasicBot.Say: msg was empty.")
 	}
@@ -291,6 +307,8 @@ func (bb *BasicBot) Start() {
 		fmt.Println("Aborting...")
 		return
 	}
+	bb.CreateHeaders(true)
+	bb.client = &http.Client{}
 	// Мониторинг чата go ...
 	for {
 		bb.Connect()
